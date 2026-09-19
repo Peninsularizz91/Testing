@@ -57,7 +57,7 @@ module tt_um_vga_glyph_mode(
         .vpos(vpos)
     );
 
-    // glyphs
+    // glyphs para sa background matrix rain (HAPPY BIRTHDAY YENG)
     glyphs_rom glyphs(
         .c(glyph_index),
         .y(g_y),
@@ -73,45 +73,105 @@ module tt_um_vga_glyph_mode(
         .color(color)
     );
 
-    // Sinunod-sunod ang titik pababa gamit ang yb (row position) para mabasa nang patayo ang HAPPY BIRTHDAY
+    // Function para sa HAPPY BIRTHDAY YENG (19 characters)
     function [5:0] get_hb_glyph;
         input [5:0] row;
-        reg [3:0] idx;
+        reg [4:0] idx;
         begin
-            idx = row % 4'd14;
+            idx = row % 5'd19;
             case (idx)
-                4'd0:  get_hb_glyph = 6'd7;  // H
-                4'd1:  get_hb_glyph = 6'd0;  // A
-                4'd2:  get_hb_glyph = 6'd15; // P
-                4'd3:  get_hb_glyph = 6'd15; // P
-                4'd4:  get_hb_glyph = 6'd24; // Y
-                4'd5:  get_hb_glyph = 6'd26; // (space)
-                4'd6:  get_hb_glyph = 6'd1;  // B
-                4'd7:  get_hb_glyph = 6'd8;  // I
-                4'd8:  get_hb_glyph = 6'd17; // R
-                4'd9:  get_hb_glyph = 6'd19; // T
-                4'd10: get_hb_glyph = 6'd7;  // H
-                4'd11: get_hb_glyph = 6'd3;  // D
-                4'd12: get_hb_glyph = 6'd0;  // A
-                4'd13: get_hb_glyph = 6'd24; // Y
+                5'd0:  get_hb_glyph = 6'd7;  // H
+                5'd1:  get_hb_glyph = 6'd0;  // A
+                5'd2:  get_hb_glyph = 6'd15; // P
+                5'd3:  get_hb_glyph = 6'd15; // P
+                5'd4:  get_hb_glyph = 6'd24; // Y
+                5'd5:  get_hb_glyph = 6'd26; // (space)
+                5'd6:  get_hb_glyph = 6'd1;  // B
+                5'd7:  get_hb_glyph = 6'd8;  // I
+                5'd8:  get_hb_glyph = 6'd17; // R
+                5'd9:  get_hb_glyph = 6'd19; // T
+                5'd10: get_hb_glyph = 6'd7;  // H
+                5'd11: get_hb_glyph = 6'd3;  // D
+                5'd12: get_hb_glyph = 6'd0;  // A
+                5'd13: get_hb_glyph = 6'd24; // Y
+                5'd14: get_hb_glyph = 6'd26; // (space)
+                5'd15: get_hb_glyph = 6'd24; // Y
+                5'd16: get_hb_glyph = 6'd4;  // E
+                5'd17: get_hb_glyph = 6'd13; // N
+                5'd18: get_hb_glyph = 6'd6;  // G
                 default: get_hb_glyph = 6'd26;
             endcase
         end
     endfunction
 
     wire [5:0] glyph_index = get_hb_glyph(yb);
-    
+
+    // ==========================================
+    // POPUP FEATURE: HAPPY BIRTHDAY MAYENG
+    // Maglalabas pagkalipas ng 7 seconds (420 frames)
+    // ==========================================
+    wire popup_active = (frame >= 10'd420);
+    wire in_box_x = (hpos >= 11'd100 && hpos < 11'd540);
+    wire in_box_y = (vpos >= 10'd200 && vpos < 10'd280);
+    wire box_region = popup_active && in_box_x && in_box_y;
+
+    wire [10:0] box_local_x = hpos - 11'd110;
+    wire [9:0]  box_local_y = vpos - 10'd232;
+    wire [4:0]  popup_char_col = box_local_x[9:3];
+    wire [2:0]  popup_glyph_x  = box_local_x[2:0];
+    wire [3:0]  popup_glyph_y  = box_local_y[3:0];
+
+    function [5:0] get_popup_glyph;
+        input [4:0] col;
+        begin
+            case (col)
+                5'd0:  get_popup_glyph = 6'd7;  // H
+                5'd1:  get_popup_glyph = 6'd0;  // A
+                5'd2:  get_popup_glyph = 6'd15; // P
+                5'd3:  get_popup_glyph = 6'd15; // P
+                5'd4:  get_popup_glyph = 6'd24; // Y
+                5'd5:  get_popup_glyph = 6'd26; // (space)
+                5'd6:  get_popup_glyph = 6'd1;  // B
+                5'd7:  get_popup_glyph = 6'd8;  // I
+                5'd8:  get_popup_glyph = 6'd17; // R
+                5'd9:  get_popup_glyph = 6'd19; // T
+                5'd10: get_popup_glyph = 6'd7;  // H
+                5'd11: get_popup_glyph = 6'd3;  // D
+                5'd12: get_popup_glyph = 6'd0;  // A
+                5'd13: get_popup_glyph = 6'd24; // Y
+                5'd14: get_popup_glyph = 6'd26; // (space)
+                5'd15: get_popup_glyph = 6'd12; // M
+                5'd16: get_popup_glyph = 6'd0;  // A
+                5'd17: get_popup_glyph = 6'd24; // Y
+                5'd18: get_popup_glyph = 6'd4;  // E
+                5'd19: get_popup_glyph = 6'd13; // N
+                5'd20: get_popup_glyph = 6'd6;  // G
+                default: get_popup_glyph = 6'd26;
+            endcase
+        end
+    endfunction
+
+    wire [5:0] popup_glyph_index = get_popup_glyph(popup_char_col);
+    wire popup_text_pixel;
+
+    glyphs_rom popup_glyphs(
+        .c(popup_glyph_index),
+        .y(popup_glyph_y),
+        .x(popup_glyph_x),
+        .pixel(popup_text_pixel)
+    );
+
     wire [1:0] a = xb[1:0];
     wire [3:0] b = xb[5:2];
     wire [2:0] d = xb[3:2] + 2'd3;
 
     wire t = &{xb[0] ^ yb[2] ^ frame[7], xb[1] ^ yb[1] ^ frame[8], xb[2] ^ yb[3] ^ frame[9], xb[3] ^ yb[0]}; // toggle glyph
 
-    // column features
+    // column features (mas mabilis na pagbagsak gamit ang mas mataas na bits ng frame)
     wire s = ^xb[6:0]; // speed of rain
     wire n = xb[1] ^ xb[3] ^ xb[5]; // lit on or off
 
-    wire [6:0] v = (s ? frame[8:2] : frame[9:3]) - yb - x_mix;
+    wire [6:0] v = (s ? frame[7:1] : frame[8:2]) - yb - x_mix;
     wire [3:0] c = {1'b0, a} + d;
     wire [6:0] e = {3'b000, b} << c;
     wire [6:0] f = v & e;
@@ -123,7 +183,15 @@ module tt_um_vga_glyph_mode(
 
     wire [5:0] z = (&(~v[2:0]) & &(y)) ? 6'd63 : glyph_color;
 
-    wire [5:0] RGB = (display_on & hl & ~(|f | n | drop_bit)) ? z : 6'd0;
+    // Kulay ng Popup Box at Font
+    wire [5:0] popup_box_color = 6'b110011; // Purple box background
+    wire [5:0] popup_font_color = 6'b111111; // White text color
+
+    // Final RGB Multiplexer
+    wire [5:0] RGB = display_on ? (
+        box_region ? (popup_text_pixel ? popup_font_color : popup_box_color) :
+        ((hl & ~(|f | n | drop_bit)) ? z : 6'd0)
+    ) : 6'd0;
 
     always @(posedge vsync, negedge rst_n) begin
         if (~rst_n) begin
